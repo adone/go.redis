@@ -1,0 +1,6 @@
+*.md
+.gitignore
+.gitlab-ci.yml
+.dockerignore
+Dockerfile.*
+VERSION

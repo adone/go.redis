@@ -1,0 +1,39 @@
+image: docker:latest
+
+before_script:
+  # Setup SSH for remote repo fetch
+  - 'which ssh-agent || ( apt-get install -y openssh-client )'
+  - 'if [ -z $SSH_AGENT_PID ] && [ -z $SSH_TTY ]; then eval `ssh-agent -s` > /dev/null; fi'
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay
+
+stages:
+  # - test
+  # - release
+
+# test:1.7.5-alpine:
+#   stage: test
+#   script:
+#     - docker build -f Dockerfile.testenv.go1.7.5-alpine -t redis/testenv:go1.7.5-alpine .
+#     - docker run redis/testenv:go1.7.5-alpine make tests
+
+# test:1.7.5-alpine3.5:
+#   stage: test
+#   script:
+#     - docker build -f Dockerfile.testenv.go1.7.5-alpine3.5 -t redis/testenv:go1.7.5-alpine3.5 .
+#     - docker run redis/testenv:go1.7.5-alpine3.5 make tests
+
+# release:
+#   stage:  release
+#   only:
+#     - master
+#   except:
+#     - tags
+#   script: make release
