@@ -6,11 +6,14 @@ import (
 
 // New создание подключения к редису по переданным настройкам
 func New(config Configuration) (redis.Conn, error) {
-	return redis.DialURL(config.URL,
+	url, err := config.URL()
+	if err != nil {
+		return nil, err
+	}
+	return redis.DialURL(url,
 		redis.DialConnectTimeout(config.GetConnectTimeout()),
 		redis.DialReadTimeout(config.GetReadTimeout()),
 		redis.DialWriteTimeout(config.GetWriteTimeout()),
-		redis.DialDatabase(config.Database),
 	)
 }
 

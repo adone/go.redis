@@ -17,7 +17,7 @@ var _ = Describe("Environment", func() {
 		prefixed = func(env string) string { return fmt.Sprintf("%s_%s", prefix, env) }
 	)
 
-	Context("method URL", func() {
+	Context("method url", func() {
 		AfterEach(func() {
 			os.Setenv(prefixed("REDIS_SERVICE_HOST"), "")
 			os.Setenv(prefixed("REDIS_SERVICE_PORT"), "")
@@ -38,7 +38,7 @@ var _ = Describe("Environment", func() {
 			})
 
 			It("should return URL", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -53,7 +53,7 @@ var _ = Describe("Environment", func() {
 			})
 
 			It("should return URL", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -70,7 +70,7 @@ var _ = Describe("Environment", func() {
 			})
 
 			It("should return URL", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -87,7 +87,7 @@ var _ = Describe("Environment", func() {
 			})
 
 			It("should return URL", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -101,8 +101,8 @@ var _ = Describe("Environment", func() {
 				os.Setenv(prefixed("REDIS_USERNAME"), username)
 			})
 
-			It("should return URL without credentials", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+			It("should return url without credentials", func() {
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -116,8 +116,8 @@ var _ = Describe("Environment", func() {
 				os.Setenv(prefixed("REDIS_PASSWORD"), password)
 			})
 
-			It("should return URL without credentials", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+			It("should return url without credentials", func() {
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -132,7 +132,7 @@ var _ = Describe("Environment", func() {
 			})
 
 			It("should return URL", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("Environment", func() {
 			})
 
 			It("should return URL", func() {
-				Expect(redis.URL(prefix)).To(Equal(address))
+				Expect(redis.ENV(prefix).URL()).To(Equal(address))
 			})
 		})
 	})

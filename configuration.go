@@ -1,17 +1,21 @@
 package redis
 
 import (
+	"github.com/FZambia/go-sentinel"
 	"time"
 )
 
 // Configuration настройки подключения к редису
 type Configuration struct {
-	URL            string        // Адрес хоста редиса
-	Timeout        time.Duration // Общий таймаут
-	ConnectTimeout time.Duration // Таймаут на подключение
-	ReadTimeout    time.Duration // Таймаут на чтение
-	WriteTimeout   time.Duration // Таймаут на запись
-	Database       int           // Номер базы данных
+	url            string             // Адрес хоста редиса
+	Sentinel       *sentinel.Sentinel // Подключение к Sentinel
+	Timeout        time.Duration      // Общий таймаут
+	ConnectTimeout time.Duration      // Таймаут на подключение
+	ReadTimeout    time.Duration      // Таймаут на чтение
+	WriteTimeout   time.Duration      // Таймаут на запись
+	Database       string             // Номер базы данных
+	User           string             // Пользователь базы данных
+	Password       string             // Пароль пользователя базы данных
 }
 
 // GetConnectTimeout получение размера таймаута на подключение
@@ -39,4 +43,20 @@ func (config Configuration) GetWriteTimeout() time.Duration {
 	}
 
 	return config.WriteTimeout
+}
+
+// URL выдает URL для соединения с Redis
+// Либо прямую ссылку, либо через запрос к Sentinel
+func (config Configuration) URL() (string, error) {
+	url := config.url
+
+	if config.Sentinel != nil {
+		addr, err := config.Sentinel.MasterAddr()
+		if err != nil {
+			return "", err
+		}
+		url = CompileURL(addr, config.Database, config.User, config.Password)
+	}
+
+	return url, nil
 }
