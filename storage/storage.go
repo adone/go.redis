@@ -308,6 +308,27 @@ func (storage *Client) RemoveFromSet(key string, values ...[]byte) error {
 	return err
 }
 
+// GetAllFromSet возвращает все элементы множества
+func (storage *Client) GetAllFromSet(key string) ([][]byte, error) {
+	connection := storage.checkout()
+	defer storage.release(connection)
+
+	data, err := redis.ByteSlices(connection.Do("SMEMBERS", key))
+	if err == redis.ErrNil {
+		return [][]byte{}, nil
+	}
+	return data, err
+}
+
+// IsMemberOfSet является ли элемент частью множества
+func (storage *Client) IsMemberOfSet(key string, value []byte) (bool, error) {
+	connection := storage.checkout()
+	defer storage.release(connection)
+
+	data, err := redis.Bool(connection.Do("SISMEMBER", key, value))
+	return data, err
+}
+
 func (storage *Client) StoreUnionSet(key string, keys ...string) (int, error) {
 	if len(keys) == 0 {
 		return 0, nil

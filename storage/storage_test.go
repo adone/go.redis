@@ -511,6 +511,14 @@ var _ = Describe("Client", func() {
 		})
 	}
 
+	GetAllFromSetTests := func() {
+
+	}
+
+	IsMemberOfSetTests := func() {
+
+	}
+
 	Context("without connection", func() {
 		BeforeEach(func() {
 			config = storage.Configuration{}
@@ -544,6 +552,8 @@ var _ = Describe("Client", func() {
 		Describe("method GET FIELD", GetFieldTests)
 		Describe("method FIELD EXIST", FieldExistTests)
 		Describe("method GET VALUES", GetValuesTests)
+		Describe("method SISMEMBER", IsMemberOfSetTests)
+		Describe("method SMEMBERS", GetAllFromSetTests)
 	})
 
 	Context("with connection pool", func() {
@@ -572,5 +582,7 @@ var _ = Describe("Client", func() {
 		Describe("method GET FIELD", GetFieldTests)
 		Describe("method FIELD EXIST", FieldExistTests)
 		Describe("method GET VALUES", GetValuesTests)
+		Describe("method SISMEMBER", IsMemberOfSetTests)
+		Describe("method SMEMBERS", GetAllFromSetTests)
 	})
 })
