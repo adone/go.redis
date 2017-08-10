@@ -512,11 +512,97 @@ var _ = Describe("Client", func() {
 	}
 
 	GetAllFromSetTests := func() {
+		var (
+			command *redigomock.Cmd
+			value   []byte = []byte("baz")
+		)
 
+		AfterEach(func() {
+			Expect(connection.Stats(command)).To(Equal(1))
+		})
+
+		Context("failed", func() {
+			BeforeEach(func() {
+				command = connection.Command("SMEMBERS", key).ExpectError(fmt.Errorf("error"))
+			})
+
+			It("should return error", func() {
+				data, err := client.GetAllFromSet(key)
+				Expect(err).To(HaveOccurred())
+				Expect(data).To(BeEmpty())
+			})
+		})
+
+		Context("when set exists", func() {
+			BeforeEach(func() {
+				command = connection.Command("SMEMBERS", key).Expect([]interface{}{value})
+			})
+
+			It("should return true", func() {
+				data, err := client.GetAllFromSet(key)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(Equal([][]byte{value}))
+			})
+		})
+
+		Context("when set does not exist", func() {
+			BeforeEach(func() {
+				command = connection.Command("SMEMBERS", key).ExpectError(redis.ErrNil)
+			})
+
+			It("should return false", func() {
+				data, err := client.GetAllFromSet(key)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(BeEmpty())
+			})
+		})
 	}
 
 	IsMemberOfSetTests := func() {
+		var (
+			command *redigomock.Cmd
+			value    []byte = []byte("baz")
+		)
 
+		AfterEach(func() {
+			Expect(connection.Stats(command)).To(Equal(1))
+		})
+
+		Context("failed", func() {
+			BeforeEach(func() {
+				command = connection.Command("SISMEMBER", key, value).ExpectError(fmt.Errorf("error"))
+			})
+
+			It("should return error", func() {
+				exist, err := client.IsMemberOfSet(key, value)
+				Expect(err).To(HaveOccurred())
+				Expect(exist).To(BeFalse())
+			})
+		})
+
+		Context("when field exists", func() {
+			BeforeEach(func() {
+				command = connection.Command("SISMEMBER", key, value).Expect(int64(1))
+			})
+
+			It("should return true", func() {
+				exist, err := client.IsMemberOfSet(key, value)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(exist).To(BeTrue())
+			})
+		})
+
+		Context("when field does not exist", func() {
+			BeforeEach(func() {
+				command = connection.Command("SISMEMBER", key, value).Expect(int64(0))
+			})
+
+			It("should return false", func() {
+				exist, err := client.IsMemberOfSet(key, value)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(exist).To(BeFalse())
+			})
+		})
 	}
 
 	Context("without connection", func() {
