@@ -111,7 +111,7 @@ func (storage *Client) MultiGet(keys ...string) ([][]byte, error) {
 
 	data, err := redis.ByteSlices(connection.Do("MGET", args...))
 	if err == redis.ErrNil {
-		return nil, nil
+		return [][]byte{}, nil
 	}
 
 	return data, err
