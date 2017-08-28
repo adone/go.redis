@@ -2,80 +2,79 @@ package redis
 
 import (
 	"fmt"
-	"net/url"
+	"net"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
-// ENV возвращает конфигурацию подключения
-func ENV(prefix string) Configuration {
-	config := Configuration{
-		Timeout:        CommonTimeout(prefix),
-		ConnectTimeout: ConnectionTimeout(prefix),
-		ReadTimeout:    ReadTimeout(prefix),
-		WriteTimeout:   WriteTimeout(prefix),
+// ENV return configuration from env variables
+func ENV(prefix string) *Configuration {
+	config := &Configuration{
+		Timeout:           CommonTimeout(prefix),
+		ConnectTimeout:    ConnectionTimeout(prefix),
+		ReadTimeout:       ReadTimeout(prefix),
+		WriteTimeout:      WriteTimeout(prefix),
+		MasterName:        MasterName(prefix),
+		SentinelAddresses: SentinelAddresses(prefix),
+		Password:          os.Getenv(fmt.Sprintf("%s_REDIS_PASSWORD", prefix)),
+		Database:          Database(prefix),
 	}
 
-	config.fromENV(prefix)
+	// TODO: move it to Dialer
+	if len(config.SentinelAddresses) > 0 {
+		config.Sentinel = NewSentinel(config)
+		return config
+	}
+
+	config.address = os.Getenv(fmt.Sprintf("%s_REDIS_ADDRESS", prefix))
+	if config.address == "" {
+		host := os.Getenv(fmt.Sprintf("%s_REDIS_SERVICE_HOST", prefix))
+		if host == "" {
+			host = "localhost"
+		}
+
+		port := os.Getenv(fmt.Sprintf("%s_REDIS_SERVICE_PORT", prefix))
+		if port == "" {
+			port = "6379"
+		}
+
+		config.address = net.JoinHostPort(host, port)
+	}
 
 	return config
 }
 
-// Составляем url подключения к редису
-func (config *Configuration) fromENV(prefix string) {
-	address, database, user, password := GetENVData(prefix)
+func SentinelAddresses(prefix string) []string {
+	addresses := os.Getenv(fmt.Sprintf("%s_REDIS_SENTINEL_ADDRESSES", prefix))
 
-	config.Database = database
-	config.User = user
-	config.Password = password
-	config.url = address
-
-	sentinelURLs, masterName := ParseSentinelENVs(prefix)
-	if len(sentinelURLs) != 0 {
-		config.Sentinel = NewSentinel(config, sentinelURLs, masterName)
+	if addresses == "" {
+		return nil
 	}
 
+	return strings.Split(addresses, ",")
 }
 
-func GetENVData(prefix string) (address string, database string, user string, password string) {
-	address, database, user, password, host, port := GetENVs(prefix)
-	if address == "" {
-		hostPort := fmt.Sprintf("%s:%s", host, port)
-		address = CompileURL(hostPort, database, user, password)
+func MasterName(prefix string) string {
+	master := os.Getenv(fmt.Sprintf("%s_REDIS_SENTINEL_MASTER_NAME", prefix))
+	if master == "" {
+		master = os.Getenv("REDIS_SENTINEL_MASTER_NAME")
 	}
-	return address, database, user, password
+
+	if master == "" {
+		return "mymaster"
+	}
+
+	return master
 }
 
-func GetENVs(prefix string) (address string, database string, user string, password string, host string, port string) {
-	address = os.Getenv(fmt.Sprintf("%s_REDIS_URL", prefix))
-	database = os.Getenv(fmt.Sprintf("%s_REDIS_DATABASE", prefix))
-	user = os.Getenv(fmt.Sprintf("%s_REDIS_USERNAME", prefix))
-	password = os.Getenv(fmt.Sprintf("%s_REDIS_PASSWORD", prefix))
-
-	host = os.Getenv(fmt.Sprintf("%s_REDIS_SERVICE_HOST", prefix))
-	if host == "" {
-		host = "localhost"
+func Database(prefix string) int {
+	if database, err := strconv.Atoi(os.Getenv(fmt.Sprintf("%s_REDIS_DATABASE", prefix))); err == nil {
+		return database
 	}
 
-	port = os.Getenv(fmt.Sprintf("%s_REDIS_SERVICE_PORT", prefix))
-	if port == "" {
-		port = "6379"
-	}
-
-	return address, database, user, password, host, port
-}
-
-func CompileURL(hostPort, database, user, password string) string {
-	address := url.URL{
-		Scheme: "redis",
-		Path:   database,
-	}
-	address.Host = hostPort
-
-	if user != "" && password != "" {
-		address.User = url.UserPassword(user, password)
-	}
-	return address.String()
+	return 0
 }
 
 // CommonTimeout общий таймаут

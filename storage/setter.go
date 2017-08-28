@@ -1,14 +1,12 @@
 package storage
 
-// Setter структура для записи данных в Redis
 type Setter struct {
-	Storage *Client     // соединение к редису
-	TTL     interface{} // время жизни ключа
-	Key     string      // название ключа
-	Value   []byte      // данные
+	Storage *Client
+	TTL     interface{}
+	Key     string
+	Value   []byte
 }
 
-// Call запись данных в Redis
 func (setter Setter) Call() error {
 	return setter.Set(TTL{
 		Key:   setter.Key,
@@ -16,7 +14,6 @@ func (setter Setter) Call() error {
 	}.Seconds())
 }
 
-// Set запись данных в Redis на ttl секунд
 func (setter Setter) Set(ttl int) error {
 	connection := setter.Storage.checkout()
 	defer setter.Storage.release(connection)

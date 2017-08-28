@@ -6,10 +6,10 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-// New создание пулла соединений к редису
-// Принимает конфиг, клиент для подключения, клиент для проверки доступности
+// New creates new Redis connection pool
 func New(config Configuration,
-	dial func() (redis.Conn, error), check func(redis.Conn, time.Time) error,
+	dial func() (redis.Conn, error),
+	check func(redis.Conn, time.Time) error,
 ) *redis.Pool {
 	return &redis.Pool{
 		Wait:         config.WaitConnection,
@@ -21,7 +21,6 @@ func New(config Configuration,
 	}
 }
 
-// Check вовзращает функцию проверки подключения в пулле
 func Check(configuration Configuration) func(redis.Conn, time.Time) error {
 	return func(connection redis.Conn, previous time.Time) error {
 		if configuration.CheckConnectionFrequency == 0 {

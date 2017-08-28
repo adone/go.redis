@@ -1,29 +1,18 @@
 # Redis
 
-Данная библиотека упрощает работу с [redis](github.com/garyburd/redigo/redis):
+Helpers for [redis](github.com/garyburd/redigo/redis) package
 
-* добавлены конфигурации для redis.Conn и redis.Pool
-* возможность конфигурации через ENV
-* добавлен тип Storage для более удобной работы с данными в Redis
- * обход ключей по шаблону c помощью SCAN
- * гибкая настройка TTL ключей
- * полная поддержка операций с типом Hash
+## Usage
 
-## Использование в приложениях
-
-### Обычное подключение
+### Single connection
 
 ```go
-  import "git.life-team.net/libs/redis"
+  import "gopkg.in/adone/go.redis.v1"
 ```
-
-Создается стандартный `redis.Conn`.
-
-Конфигурация подключения возможна как вручную, так и черер ENV параметры:
 
 ```go
   config := redis.Configuration{
-    URL:            "redis://localhost:6379",
+    Address:        "localhost:6379",
     ConnectTimeout: 1 * time.Second,
     ReadTimeout:    1 * time.Second,
     WriteTimeout:   5 * time.Second,
@@ -32,16 +21,15 @@
 ```
 
 ```go
-  // TEST_REDIS_URL=redis://localhost:6379/1
+  // TEST_REDIS_ADDRESS=localhost:6379
+  // TEST_REDIS_DATABASE=1
   // TEST_REDIS_TIMEOUT=1s
   // TEST_REDIS_WRITE_TIMEOUT=5s
   config := redis.ENV("TEST")
 ```
 
-При конфигурации через ENV параметры с префиксом перекрываются общие:
-
 ```go
-  // TEST_REDIS_URL=redis://localhost:6379
+  // TEST_REDIS_ADDRESS=localhost:6379
   // REDIS_TIMEOUT=1s
   // TEST_REDIS_TIMEOUT=2s
 
@@ -49,28 +37,24 @@
   config.Timeout // => 2 * time.Second
 ```
 
-URL может быть собран через отдельные элементы, например, при работе внутри kubernates:
-
 ```go
   // TEST_REDIS_SERVICE_HOST=10.0.0.2
   // TEST_REDIS_SERVICE_PORT=9736
   // TEST_REDIS_DATABASE=1
 
   config := redis.ENV("TEST")
-  config.URL // => "redis://10.0.0.2:9736/1"
+  config.Address() // => "10.0.0.2:9736"
 ```
 
-Также возможно извлекать из ENV отдельные аргументы:
 
 ```go
-  // TEST_REDIS_URL=redis://localhost:6379/1
-  redis.URL("TEST") // => "redis://localhost:6379/1"
+  // TEST_REDIS_DATABASE=1
+  redis.Database("TEST") // => 1
 
   // TEST_REDIS_TIMEOUT=1s
   redis.CommonTimeout("TEST") // => time.Second
 ```
 
-Полный пример создания и использования подключения:
 
 ```go
 package main
@@ -78,7 +62,7 @@ package main
 import (
     "fmt"
 
-    "git.life-team.net/libs/redis"
+    "gopkg.in/adone/go.redis.v1"
 )
 
 func main() {
@@ -93,7 +77,7 @@ func main() {
 }
 ```
 
-Поддерживаемые ENV параметры:
+Support ENV variables:
 
 * PREFIX_REDIS_URL
 * PREFIX_REDIS_SERVICE_HOST
@@ -109,27 +93,23 @@ func main() {
 * REDIS_WRITE_TIMEOUT
 * PREFIX_REDIS_READ_TIMEOUT
 * REDIS_READ_TIMEOUT
-* PREFIX_SENTINEL_HOSTS_PORTS 
+* PREFIX_SENTINEL_HOSTS_PORTS
 * PREFIX_SENTINEL_MASTER_NAME
 
 
-##### PREFIX_SENTINEL_HOSTS_PORTS
-`PREFIX_SENTINEL_HOSTS_PORTS=sentinel-1:port1,sentinel-1:port2,sentinel-2:port1`
+##### PREFIX_SENTINEL_ADDRESSES
+`PREFIX_SENTINEL_ADDRESSES=host1:port1,host2:port2,host3:port3`
 
 
-```
-
-### Пулл подключений
+### Pool
 
 ```go
-  import "git.life-team.net/libs/redis/pool"
+  import "gopkg.in/adone/go.redis.v1/pool"
 ```
-
-Конфигурация аналогична обычному подключению - можно создать вручную, можно загрузить из ENV:
 
 ```go
   config := pool.Configuration{
-    WaitConnection:           true, 
+    WaitConnection:           true,
     MaxIdleConnectionCount:   8,
     MaxActiveConnectionCount: 32,
     IdleConnectionTimeout:    1 * time.Hour,
@@ -142,26 +122,26 @@ func main() {
   // TEST_REDIS_IDLE_POOL_SIZE=8
   // TEST_REDIS_POOL_TIMEOUT=1h
   // TEST_REDIS_POOL_CHECK_TIMEOUT=1m
-  config := redis.ENV("TEST")
+  config := pool.ENV("TEST")
 ```
 
-Полный пример использования:
+Full example:
 
 ```go
 package main
 
 import (
     "fmt"
-    
+
     redigo "github.com/garyburd/redigo/redis"
 
-    "git.life-team.net/libs/redis"
-    "git.life-team.net/libs/redis/pool"
+    "gopkg.in/adone/go.redis.v1"
+    "gopkg.in/adone/go.redis.v1/pool"
 )
 
 func main() {
     config := pool.ENV("TEST")
-    
+
     pl := pool.New(config,
         redis.Connect(redis.ENV("TEST")),
         pool.Check(config),
@@ -175,7 +155,7 @@ func main() {
 }
 ```
 
-Поддерживаемые ENV параметры:
+Support ENV variables:
 
 * PREFIX_REDIS_ACTIVE_POOL_SIZE
 * REDIS_ACTIVE_POOL_SIZE
@@ -188,14 +168,14 @@ func main() {
 * PREFIX_REDIS_POOL_CHECK_TIMEOUT
 * REDIS_POOL_CHECK_TIMEOUT
 
-### Хранилище
+### Storage
 
 ```go
-import "git.life-team.net/libs/redis/storage"
+import "gopkg.in/adone/go.redis.v1/storage"
 
 ```
 
-Поддерживаемые команды:
+Commands:
 
 * INCRBY
 
@@ -225,7 +205,7 @@ import "git.life-team.net/libs/redis/storage"
 
 * SETEX
 
-`storage` автоматически меняет команду SET на SETEX, если установлена опция `KeyTTL`
+`storage` automatic change SET to SETEX if `KeyTTL` is set
 
 ```go
   client.New(storage.Configuration{KeyTTL: 100})
@@ -237,7 +217,7 @@ import "git.life-team.net/libs/redis/storage"
   client.Set("key", []byte("value")) // => SETEX key 10 value
 ```
 
-TTL может настраиваться вручуню через тип `storage.Setter`
+TTL can be set in `storage.Setter`
 
 ```go
   setter := storage.Setter{
@@ -280,8 +260,6 @@ TTL может настраиваться вручуню через тип `stor
   keys, err := client.Keys("key.*.template")
 ```
 
-более гибкую настройку вызова обеспечивает тип `storage.Iterator`
-
 ```go
   iterator := storage.Iterator{
     Storage:   client,
@@ -322,7 +300,17 @@ TTL может настраиваться вручуню через тип `stor
   client.DeleteFields("key", "field")
 ```
 
-поддерживается множественное удаление ключей в Hash
+* SMEMBERS
+
+```go
+data, err := client.GetAllFromSet("setname")
+```
+
+* SISMEMBER
+
+```go
+exist, err := client.IsMemberOfSet("setname", "value")
+```
 
 ```go
   client.DeleteFields("key", "field1", "filed2", "filed3")
@@ -334,17 +322,17 @@ TTL может настраиваться вручуню через тип `stor
   err := client.Publish("key", []byte("value"))
 ```
 
-Полный пример использования:
+Full example:
 
-```
+```go
 package main
 
 import (
     "fmt"
 
-    "git.life-team.net/libs/redis"
-    "git.life-team.net/libs/redis/pool"
-    "git.life-team.net/libs/redis/storage"
+    "gopkg.in/adone/go.redis.v1"
+    "gopkg.in/adone/go.redis.v1/pool"
+    "gopkg.in/adone/go.redis.v1/storage"
 )
 
 func main() {
@@ -355,13 +343,13 @@ func main() {
     )
 
     client = storage.New(config)
-    
+
     err := client.Set("foo", []byte("bar"))
     fmt.Println(err)
-    
+
     message, err := client.Get("foo")
     fmt.Printf("%s %v", message, err)
-    
+
     count, err := client.Delete("foo")
     fmt.Println(count, err)
 }

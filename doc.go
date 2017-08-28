@@ -1,4 +1,4 @@
 /*
-Package redis Бибилотека подключения к редису.
+Package redis contains helper functions and structs for working with Redis.
 */
 package redis

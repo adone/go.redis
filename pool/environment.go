@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	// DefaultRedisPoolSize Максимальное количество свободных соединений в пулле
+	// DefaultRedisPoolSize defines max free connection in pool
 	DefaultRedisPoolSize = 8
 )
 
-// ENV возвращает конфигурацию пулла
+// ENV returns redis pool configuration from env variables
 func ENV(prefix string) Configuration {
 	return Configuration{
 		WaitConnection:           true,
@@ -23,7 +23,7 @@ func ENV(prefix string) Configuration {
 	}
 }
 
-// MaxActiveCount максимальное количество активных соединений
+// MaxActiveCount returns max active connections count
 func MaxActiveCount(prefix string) int {
 	value := os.Getenv(fmt.Sprintf("%s_REDIS_ACTIVE_POOL_SIZE", prefix))
 	if value == "" {
@@ -37,7 +37,7 @@ func MaxActiveCount(prefix string) int {
 	return 0
 }
 
-// MaxIdleCount максимальное количестов соединений в режиме ожидания
+// MaxIdleCount returns max idle connections count
 func MaxIdleCount(prefix string) int {
 	value := os.Getenv(fmt.Sprintf("%s_REDIS_IDLE_POOL_SIZE", prefix))
 	if value == "" {
@@ -55,7 +55,7 @@ func MaxIdleCount(prefix string) int {
 	return DefaultRedisPoolSize
 }
 
-// IdleTimeout время жизни соединения в пулле
+// IdleTimeout returns connection idle timeout
 func IdleTimeout(prefix string) time.Duration {
 	value := os.Getenv(fmt.Sprintf("%s_REDIS_POOL_TIMEOUT", prefix))
 	if value == "" {
@@ -73,7 +73,7 @@ func IdleTimeout(prefix string) time.Duration {
 	return 0
 }
 
-// CheckFrequency частота проверки соединения
+// CheckFrequency returns connection check timeout
 func CheckFrequency(prefix string) time.Duration {
 	value := os.Getenv(fmt.Sprintf("%s_REDIS_POOL_CHECK_TIMEOUT", prefix))
 	if value == "" {

@@ -1,6 +1,4 @@
 /*
-Package storage Бибилотека для работы с кешем в редисе.
-
-Поддерживает только простые комманды: SET, SETEX, GET, DEL.
+Package storage contains helper functions & structs for high-level work with Redis
 */
 package storage

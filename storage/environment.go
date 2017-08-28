@@ -1,6 +1,6 @@
 package storage
 
-// ENV возвращает конфигурацию стораджа
+// ENV returns storage configuration from env variables
 func ENV(prefix string) Configuration {
 	return Configuration{}
 }

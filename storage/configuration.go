@@ -4,9 +4,8 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-// Configuration настройки стораджа кеша
 type Configuration struct {
-	KeyTTL    interface{} // Время жизни ключа
+	KeyTTL    interface{} // Common key time-to-live, if set affects every key used in storage
 	Namespace string
 
 	Pool       *redis.Pool

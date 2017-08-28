@@ -17,43 +17,46 @@ var _ = Describe("Environment", func() {
 		prefixed = func(env string) string { return fmt.Sprintf("%s_%s", prefix, env) }
 	)
 
-	Context("method url", func() {
+	Context("method Address", func() {
 		AfterEach(func() {
 			os.Setenv(prefixed("REDIS_SERVICE_HOST"), "")
 			os.Setenv(prefixed("REDIS_SERVICE_PORT"), "")
-			os.Setenv(prefixed("REDIS_USERNAME"), "")
 			os.Setenv(prefixed("REDIS_PASSWORD"), "")
 			os.Setenv(prefixed("REDIS_DATABASE"), "")
-			os.Setenv(prefixed("REDIS_URL"), "")
+			os.Setenv(prefixed("REDIS_ADDRESS"), "")
 		})
 
 		Context("when SERVICE HOST is set", func() {
 			var (
 				host    = "example"
-				address = "redis://example:6379"
+				address = "example:6379"
 			)
 
 			BeforeEach(func() {
 				os.Setenv(prefixed("REDIS_SERVICE_HOST"), host)
 			})
 
-			It("should return URL", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
+			It("should return address", func() {
+				result, err := redis.ENV(prefix).Address()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).To(Equal(address))
 			})
 		})
 
 		Context("when SERVICE PORT is set", func() {
 			var (
 				port    = "9736"
-				address = "redis://localhost:9736"
+				address = "localhost:9736"
 			)
 
 			BeforeEach(func() {
 				os.Setenv(prefixed("REDIS_SERVICE_PORT"), port)
 			})
 
-			It("should return URL", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
+			It("should return address", func() {
+				result, err := redis.ENV(prefix).Address()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).To(Equal(address))
 			})
 		})
 
@@ -61,7 +64,7 @@ var _ = Describe("Environment", func() {
 			var (
 				port    = "9736"
 				host    = "lvh.me"
-				address = "redis://lvh.me:9736"
+				address = "lvh.me:9736"
 			)
 
 			BeforeEach(func() {
@@ -69,82 +72,24 @@ var _ = Describe("Environment", func() {
 				os.Setenv(prefixed("REDIS_SERVICE_HOST"), host)
 			})
 
-			It("should return URL", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
+			It("should return address", func() {
+				result, err := redis.ENV(prefix).Address()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).To(Equal(address))
 			})
 		})
 
-		Context("when USERNAME & PASSWORD are set", func() {
-			var (
-				username = "foo"
-				password = "bar"
-				address  = "redis://foo:bar@localhost:6379"
-			)
+		Context("when REDIS_ADDRESS is set", func() {
+			var address = "127.0.0.1:6379"
 
 			BeforeEach(func() {
-				os.Setenv(prefixed("REDIS_USERNAME"), username)
-				os.Setenv(prefixed("REDIS_PASSWORD"), password)
+				os.Setenv(prefixed("REDIS_ADDRESS"), address)
 			})
 
-			It("should return URL", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
-			})
-		})
-
-		Context("when USERNAME is set", func() {
-			var (
-				username = "foo"
-				address  = "redis://localhost:6379"
-			)
-
-			BeforeEach(func() {
-				os.Setenv(prefixed("REDIS_USERNAME"), username)
-			})
-
-			It("should return url without credentials", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
-			})
-		})
-
-		Context("when PASSWORD is set", func() {
-			var (
-				password = "bar"
-				address  = "redis://localhost:6379"
-			)
-
-			BeforeEach(func() {
-				os.Setenv(prefixed("REDIS_PASSWORD"), password)
-			})
-
-			It("should return url without credentials", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
-			})
-		})
-
-		Context("when DATABASE is set", func() {
-			var (
-				database = "1"
-				address  = "redis://localhost:6379/1"
-			)
-
-			BeforeEach(func() {
-				os.Setenv(prefixed("REDIS_DATABASE"), database)
-			})
-
-			It("should return URL", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
-			})
-		})
-
-		Context("when REDIS_URL is set", func() {
-			var address = "redis://127.0.0.1:6379/10"
-
-			BeforeEach(func() {
-				os.Setenv(prefixed("REDIS_URL"), address)
-			})
-
-			It("should return URL", func() {
-				Expect(redis.ENV(prefix).URL()).To(Equal(address))
+			It("should return address", func() {
+				result, err := redis.ENV(prefix).Address()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).To(Equal(address))
 			})
 		})
 	})

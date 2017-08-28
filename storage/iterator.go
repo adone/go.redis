@@ -55,17 +55,16 @@ func WithBatchSize(batchSize int) Option {
 	}
 }
 
-// Iterator структура для обхода ключей в Redis
 type Iterator struct {
 	command   string
 	key       string
 	cursor    string
-	storage   *Client // клиент
-	template  string  // шаблон ключа
-	batchSize int     // количество изымаемых ключей за раз
+	storage   *Client
+	template  string
+	batchSize int
 }
 
-// All обход ключей в Redis
+// All iterates all keys with provided function
 func (iterator *Iterator) All(yield func([]interface{})) error {
 	if iterator.batchSize == 0 {
 		return nil
@@ -102,7 +101,7 @@ func (iterator *Iterator) Next() ([]interface{}, error) {
 }
 
 func (iterator *Iterator) handle(data interface{}) (result []interface{}) {
-	// формат ответа - [cursor,[value,value,...]]
+	// response format - [cursor,[value,value,...]]
 	if results, ok := data.([]interface{}); ok && len(results) == 2 {
 		if values, ok := results[1].([]interface{}); ok {
 			result = values

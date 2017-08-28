@@ -6,7 +6,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-// New создание нового интерфейса хранилища данных в Redis
+// New creates new Redis client
 func New(config Configuration) *Client {
 	storage := &Client{
 		guard:     new(sync.Mutex),
@@ -29,12 +29,11 @@ func New(config Configuration) *Client {
 	return nil
 }
 
-// Client структура хранилища
 type Client struct {
-	KeyTTL    interface{} // время хранения данных в Redis
+	KeyTTL    interface{} // Common key time-to-live, if set affects every key used in storage
 	Namespace string
 
-	pool       *redis.Pool // Пулл соединений к редису
+	pool       *redis.Pool
 	guard      *sync.Mutex
 	connection redis.Conn
 }
@@ -57,7 +56,7 @@ func (storage *Client) release(connection redis.Conn) {
 	storage.guard.Unlock()
 }
 
-// Expire установка времени жизни ключа в редисе
+// Expire see EXPIRE
 func (storage *Client) Expire(key string, ttl interface{}) error {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -66,7 +65,7 @@ func (storage *Client) Expire(key string, ttl interface{}) error {
 	return err
 }
 
-// Set запись данных по ключу в редис
+// Set see SET
 func (storage *Client) Set(key string, value []byte) error {
 	setter := Setter{
 		Storage: storage,
@@ -78,7 +77,7 @@ func (storage *Client) Set(key string, value []byte) error {
 	return setter.Call()
 }
 
-// Increment добавление дельты к оперделенному ключу
+// Increment see INCREMENT
 func (storage *Client) Increment(key string, delta int) (int, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -86,7 +85,7 @@ func (storage *Client) Increment(key string, delta int) (int, error) {
 	return redis.Int(connection.Do("INCRBY", key, delta))
 }
 
-// Get чтение данных по ключу из Redis
+// Get see GET
 func (storage *Client) Get(key string) ([]byte, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -99,7 +98,7 @@ func (storage *Client) Get(key string) ([]byte, error) {
 	return data, err
 }
 
-// MultiGet чтение данных по ключу из Redis
+// MultiGet see MGET
 func (storage *Client) MultiGet(keys ...string) ([][]byte, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -117,7 +116,7 @@ func (storage *Client) MultiGet(keys ...string) ([][]byte, error) {
 	return data, err
 }
 
-// Publish отправка сообщение в Redis PubSub
+// Publish see PUBLISH
 func (storage *Client) Publish(key string, value []byte) error {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -127,9 +126,8 @@ func (storage *Client) Publish(key string, value []byte) error {
 	return err
 }
 
-// Keys поиск ключей по шаблону
+// Keys see SCAN, it does not use KEYS because it recommended by Redis team https://redis.io/commands/keys
 func (storage *Client) Keys(template string) ([]string, error) {
-	// используется SCAN, потому что так рекомендуется самим redis - https://redis.io/commands/keys
 	iterator := NewIterator(WithStorage(storage), WithTemplate(template), WithBatchSize(32))
 
 	var keys []string
@@ -141,7 +139,7 @@ func (storage *Client) Keys(template string) ([]string, error) {
 	})
 }
 
-// SetField установка значения поля в HASH
+// SetField see HSET
 func (storage *Client) SetField(key, field string, value []byte) error {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -151,7 +149,7 @@ func (storage *Client) SetField(key, field string, value []byte) error {
 	return err
 }
 
-// GetField извлечение поля из HASH
+// GetField see HGET
 func (storage *Client) GetField(key, field string) ([]byte, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -165,7 +163,7 @@ func (storage *Client) GetField(key, field string) ([]byte, error) {
 	return data, err
 }
 
-// SetFields установка полей в HASH
+// SetFields see HMSET
 func (storage *Client) SetFields(key string, hash map[string]interface{}) error {
 	if len(hash) == 0 {
 		return nil
@@ -189,7 +187,7 @@ func (storage *Client) SetFields(key string, hash map[string]interface{}) error 
 	return err
 }
 
-// GetFields извлечение полей из HASH
+// GetFields see HMGET
 func (storage *Client) GetFields(keyAndFields ...string) (map[string][]byte, error) {
 	if len(keyAndFields) <= 1 {
 		return nil, nil
@@ -213,7 +211,7 @@ func (storage *Client) GetFields(keyAndFields ...string) (map[string][]byte, err
 	return hash, err
 }
 
-// IncrementField обновления поля из HASH
+// IncrementField see HINCRBY
 func (storage *Client) IncrementField(key, field string, delta int) (int, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -221,7 +219,7 @@ func (storage *Client) IncrementField(key, field string, delta int) (int, error)
 	return redis.Int(connection.Do("HINCRBY", key, field, delta))
 }
 
-// FieldExist извлечение поля из HASH
+// FieldExist see HEXISTS
 func (storage *Client) FieldExist(key, field string) (bool, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -229,7 +227,7 @@ func (storage *Client) FieldExist(key, field string) (bool, error) {
 	return redis.Bool(connection.Do("HEXISTS", key, field))
 }
 
-// GetValues извлечение полей из HASH
+// GetValues see HVALS
 func (storage *Client) GetValues(key string) ([][]byte, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -243,7 +241,7 @@ func (storage *Client) GetValues(key string) ([][]byte, error) {
 	return data, err
 }
 
-// RemoveFields удаление полей из HASH
+// RemoveFields see HDEL
 func (storage *Client) RemoveFields(keyAndFields ...string) error {
 	if len(keyAndFields) <= 1 {
 		return nil
@@ -262,7 +260,7 @@ func (storage *Client) RemoveFields(keyAndFields ...string) error {
 	return err
 }
 
-// Cardinality размер множества
+// Cardinality see SCARD
 func (storage *Client) Cardinality(key string) (int, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -270,7 +268,7 @@ func (storage *Client) Cardinality(key string) (int, error) {
 	return redis.Int(connection.Do("SCARD", key))
 }
 
-// AddToSet добавление в множество
+// AddToSet see SADD
 func (storage *Client) AddToSet(key string, values ...[]byte) error {
 	if len(values) == 0 {
 		return nil
@@ -289,7 +287,7 @@ func (storage *Client) AddToSet(key string, values ...[]byte) error {
 	return err
 }
 
-// RemoveFromSet удаление из множества
+// RemoveFromSet see SREM
 func (storage *Client) RemoveFromSet(key string, values ...[]byte) error {
 	if len(values) == 0 {
 		return nil
@@ -308,7 +306,7 @@ func (storage *Client) RemoveFromSet(key string, values ...[]byte) error {
 	return err
 }
 
-// GetAllFromSet возвращает все элементы множества
+// GetAllFromSet see SMEMBERS
 func (storage *Client) GetAllFromSet(key string) ([][]byte, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -320,7 +318,7 @@ func (storage *Client) GetAllFromSet(key string) ([][]byte, error) {
 	return data, err
 }
 
-// IsMemberOfSet является ли элемент частью множества
+// IsMemberOfSet see SISMEMBER
 func (storage *Client) IsMemberOfSet(key string, value []byte) (bool, error) {
 	connection := storage.checkout()
 	defer storage.release(connection)
@@ -329,6 +327,7 @@ func (storage *Client) IsMemberOfSet(key string, value []byte) (bool, error) {
 	return data, err
 }
 
+// StoreUnionSet see SUNIONSTORE
 func (storage *Client) StoreUnionSet(key string, keys ...string) (int, error) {
 	if len(keys) == 0 {
 		return 0, nil
@@ -346,7 +345,7 @@ func (storage *Client) StoreUnionSet(key string, keys ...string) (int, error) {
 	return redis.Int(connection.Do("SUNIONSTORE", args...))
 }
 
-// Delete удаление ключа из редиса
+// Delete see DEL
 func (storage *Client) Delete(keys ...string) (int, error) {
 	if len(keys) == 0 {
 		return 0, nil

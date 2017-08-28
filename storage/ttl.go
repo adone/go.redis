@@ -4,13 +4,12 @@ import (
 	"time"
 )
 
-// TTL время жизни ключа
 type TTL struct {
 	Key   string
 	Value interface{}
 }
 
-// Seconds время жизни в секундах
+// Seconds returns converted time from initial value in seconds
 func (ttl TTL) Seconds() int {
 	switch value := ttl.Value.(type) {
 	case int:
