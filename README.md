@@ -1,6 +1,6 @@
 # Redis
 
-Helpers for [redis](github.com/garyburd/redigo/redis) package
+Helpers for [redis](//github.com/garyburd/redigo) package
 
 ## Usage
 
